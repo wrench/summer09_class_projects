@@ -1,0 +1,28 @@
+#!/usr/bin/env ruby
+ 
+require 'open3'
+def combinations(args) 
+  return [[]] if args.empty? # base case 
+  head, tail = [args.first, args[1, args.length-1]]
+  tail_combinations = combinations(tail) # recursive calls made here passing tail each time until tail is empty list 
+  combos = tail_combinations.inject([]) {|full_list, current_obj| full_list << [head] + current_obj} + tail_combinations # slap them all together
+end
+if ARGV.length < 1; puts 'usage: <program_path> <arg1> ..<argN>'; exit; # show usage and exit if no args passed
+else
+  program, args = [ARGV.shift, ARGV.uniq] # assign ARGV[0] to program and remove dupes from rest of ARGV and assign to args
+  combos = combinations(args) # get the cominations of args
+  combos.sort! {|x,y| x.length <=> y.length } # sort combos by length in ASC order
+  combos.collect! {|elem| if elem.is_a?(String); elem; else; elem.join(" "); end} # convert any lists inside the list into strings with join(" ")
+  combos.each do |combo| # make the calls to the given program using the combinations of args given in ARGV of THIS program
+    Open3.popen3("./#{program} #{combo}") do |stddin, stdout, stderr| # open a process for executing the call to the other program
+      puts "Result of: #{program} #{combo}"
+      matches = []
+      while line = stdout.gets; matches << line if line =~ /platypus/ || line =~ /\d\d\d\d\d/; end # add lines to matches array 
+      if matches.empty?; puts "nothing for it"; else; matches.sort! {|x,y| x.length <=> y.length }; puts matches; end # output result of a run
+    end # popen3
+  end # each
+end # else
+
+
+
+  
